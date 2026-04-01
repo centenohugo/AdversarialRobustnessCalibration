@@ -50,18 +50,3 @@ class SmallCNN_adv(SmallCNN_extended):
 
         print("\nTraining complete.")
         self.eval()
-
-    def eval_robust_accuracy(self, loader, eps, targeted=False, y_target=None):
-        """Evaluates accuracy under FGSM attack."""
-        self.eval()
-        correct, total = 0, 0
-        device = next(self.parameters()).device
-
-        for x, y in loader:
-            x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
-
-            x_adv = self._fgsm_attack(x, y if not targeted else y_target.to(device))
-            correct += (self.forward(x_adv).argmax(1) == y).sum().item()
-            total   += x.size(0)
-
-        return correct / total
