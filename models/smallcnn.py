@@ -38,10 +38,10 @@ class SmallCNN_extended(SmallCNN):
         self.loss_during_training  = []
         self.acc_during_training   = []
 
-    def trainloop(self, trainloader, testloader):
+    def trainloop(self, trainloader, valloader):
         device = next(self.parameters()).device
         print(f"Starting training: {self.epochs} epochs, lr={self.lr}, "
-              f"{len(trainloader)} train batches, {len(testloader)} test batches, "
+              f"{len(trainloader)} train batches, {len(valloader)} validation batches, "
               f"device={device}\n", flush=True)
 
         for e in range(self.epochs):
@@ -64,17 +64,17 @@ class SmallCNN_extended(SmallCNN):
             self.loss_during_training.append(epoch_loss)
 
             # Evaluate
-            acc = self._eval_accuracy(testloader)
+            acc = self.eval_accuracy(valloader)
             self.acc_during_training.append(acc)
 
             print(f"Epoch {e+1}/{self.epochs} — "
-                  f"loss={epoch_loss:.4f}  test_acc={acc*100:.2f}%", flush=True)
+                  f"loss={epoch_loss:.4f}  val_acc={acc*100:.2f}%", flush=True)
 
         print("\nTraining complete.")
         self.eval()
 
     @torch.no_grad()
-    def _eval_accuracy(self, loader):
+    def eval_accuracy(self, loader):
         self.eval()
         correct, total = 0, 0
         device = next(self.parameters()).device
