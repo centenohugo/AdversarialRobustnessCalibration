@@ -4,7 +4,7 @@ import torch
 class SmallCNN_adv(SmallCNN_extended):
     """Same architecture as SmallCNN, trained with FGSM adversarial training."""
 
-    def __init__(self, epochs=3, lr=1e-3, eps=0.3, lam=0.5):
+    def __init__(self, epochs=3, lr=1e-3, eps=8/255, lam=0.5):
         super().__init__(epochs=epochs, lr=lr)
         self.eps = eps
         self.lam = lam
