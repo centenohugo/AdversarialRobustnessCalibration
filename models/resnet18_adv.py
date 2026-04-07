@@ -16,16 +16,18 @@ class ResNet18CIFAR_adv(ResNet18CIFAR_extended):
         self.lam = lam
 
     def _fgsm_attack(self, x, y):
+        self.eval()
         x_adv = x.detach().clone().requires_grad_(True)
         loss = self.criterion(self.forward(x_adv), y)
         loss.backward()
         x_adv = x_adv + self.eps * x_adv.grad.sign()
+        self.train()
         return torch.clamp(x_adv, 0.0, 1.0).detach()
 
     def _train_batch(self, x, y):
         x_adv      = self._fgsm_attack(x, y)
-        loss_clean = self.criterion(self.forward(x), y)
-        loss_adv   = self.criterion(self.forward(x_adv), y)
+        loss_clean = self.criterion(self.forward(x), y) # clean loss
+        loss_adv   = self.criterion(self.forward(x_adv), y) # adversarial loss
         return (1 - self.lam) * loss_clean + self.lam * loss_adv
 
     def trainloop(self, trainloader, valloader):
