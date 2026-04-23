@@ -12,8 +12,8 @@ class ResNet18CIFAR_adv(ResNet18CIFAR_extended):
         L = (1 - lam) * L_clean + lam * L_adv
     """
 
-    def __init__(self, epochs=10, lr=1e-3, eps=8/255, lam=0.5,
-                    patience=3, min_delta=0.0):
+    def __init__(self, epochs=50, lr=1e-3, eps=8/255, lam=0.5,
+                    patience=5, min_delta=0.0):
         super().__init__(epochs=epochs, lr=lr)
         self.eps = eps
         self.lam = lam
@@ -21,12 +21,17 @@ class ResNet18CIFAR_adv(ResNet18CIFAR_extended):
         self.min_delta = min_delta  # minimum improvement to reset patience counter
 
     def _fgsm_attack(self, x, y):
-        self.eval()
         x_adv = x.detach().clone().requires_grad_(True)
         loss = self.criterion(self.forward(x_adv), y)
-        loss.backward()
-        x_adv = x_adv + self.eps * x_adv.grad.sign()
-        self.train()
+        # Important: get grad wrt x_adv only (not model params)
+        grad_x = torch.autograd.grad(
+            loss,
+            x_adv,
+            retain_graph=False,
+            create_graph=False,
+            only_inputs=True,
+        )[0]
+        x_adv = x_adv + self.eps * grad_x.sign()
         return torch.clamp(x_adv, 0.0, 1.0).detach()
 
     def _train_batch(self, x, y):
@@ -40,7 +45,7 @@ class ResNet18CIFAR_adv(ResNet18CIFAR_extended):
         print(f"Starting adversarial training (eps={self.eps:.4f}, lam={self.lam}): "
                 f"{self.epochs} epochs, lr={self.lr}, device={device}\n", flush=True)
 
-        best_acc = 0.0
+        best_acc = float('-inf')
         best_state = None
         epochs_without_improvement = 0
 
